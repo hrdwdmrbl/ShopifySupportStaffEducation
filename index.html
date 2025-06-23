@@ -12,6 +12,7 @@
       body {
         font-family: "Inter", sans-serif;
         background-color: #f8fafc; /* slate-50 */
+        color: #334155; /* slate-700 */
       }
       .container {
         max-width: 800px;
@@ -31,15 +32,28 @@
         padding: 0.2rem 0.4rem;
         border-radius: 0.25rem;
         font-size: 0.9em;
+        font-weight: 500;
       }
       .key-insight {
-        background-color: #ffedd5; /* orange-100 */
-        border-left: 4px solid #fb923c; /* orange-400 */
-        color: #9a3412; /* orange-900 */
+        background-color: #fffbeb; /* yellow-50 */
+        border-left: 4px solid #facc15; /* yellow-400 */
+        color: #78350f; /* amber-900 */
+      }
+      .list-item-custom {
+        position: relative;
+        padding-left: 1.75rem; /* pl-7 */
+      }
+      .list-item-custom::before {
+        content: "✓";
+        position: absolute;
+        left: 0;
+        top: 1px;
+        color: #22c55e; /* green-500 */
+        font-weight: 600;
       }
     </style>
   </head>
-  <body class="text-slate-800">
+  <body class="antialiased">
     <main class="container mx-auto p-4 md:p-8">
       <!-- Header Section -->
       <header class="text-center mb-10">
@@ -52,11 +66,12 @@
       <!-- The Core Problem Section -->
       <section class="mb-12">
         <div class="card p-6 md:p-8 key-insight">
-          <h2 class="text-xl font-bold mb-3 text-orange-900">The Most Critical Point</h2>
+          <h2 class="text-xl font-bold mb-3 text-amber-900">The Core Problem in Brief</h2>
           <p class="text-base md:text-lg">
             The root of these issues is that an app cannot distinguish its own contribution to "Incoming" inventory from
             inventory coming from other sources (like Shopify Purchase Orders). The API only exposes the
-            <strong>net total</strong>, leading to unpredictable and uncorrectable behavior.
+            <strong>net total</strong>, which makes it impossible for an app to safely manage its own inventory values
+            without unintended side effects.
           </p>
         </div>
       </section>
@@ -69,20 +84,23 @@
               Issue 1: "Stuck" Incoming Inventory After App Uninstallation
             </h2>
           </div>
-          <div class="p-6 text-slate-700 space-y-4">
+          <div class="p-6 space-y-4">
             <p>
-              When a merchant uninstalls an app, Shopify immediately severs all permissions. This prevents the app from
-              performing any cleanup operations.
+              When a merchant uninstalls an app, Shopify immediately severs all permissions, preventing the app from
+              making any further changes. Although apps are required to delete their data upon uninstallation, any
+              "incoming" inventory adjustments they created—whether positive or negative—remain on the product.
             </p>
             <p>
-              Although apps are required to delete their data upon uninstallation, any "incoming" inventory adjustments
-              they created remain tied to the product. Because the app's connection is terminated, it has no opportunity
-              to "zero out" these leftover quantities.
+              Because the app's connection is terminated, it has no opportunity to clean up or "zero out" these leftover
+              quantities. This leaves the inventory in a "stuck" state. The merchant is unable to resolve these
+              lingering incoming inventory figures because the app that created them is no longer present to manage
+              them.
             </p>
-            <p>
-              This leaves the inventory in a "stuck" state. The merchant cannot resolve these lingering incoming figures
-              because the app that created them is no longer present to manage them. Reinstalling the app is the only
-              potential fix, but this does not address the underlying API limitation described in Issue 2.
+            <p class="text-slate-600 italic">
+              The only way for a merchant to fix this is to reinstall the app solely for the purpose of having the app
+              correct the inventory. This problem persists even if an app is behaving perfectly, as it is a fundamental
+              limitation of the uninstall process COMBINED with a decision by Shopify to not "zero out" incoming
+              inventory from apps when they are uninstalled.
             </p>
           </div>
         </div>
@@ -93,53 +111,70 @@
         <div class="card">
           <div class="card-header p-6">
             <h2 class="text-2xl font-bold text-slate-900">
-              Issue 2: Apps Cannot "Zero Out" Their Own Incoming Inventory
+              Issue 2: The Inability of Apps to "Zero Out" Their Own Inventory
             </h2>
           </div>
-          <div class="p-6 text-slate-700 space-y-4">
+          <div class="p-6 space-y-6">
             <p>
-              An app cannot isolate and remove only its own contribution to a product's "incoming" inventory. This
-              problem stems from the behavior of the <code>inventoryAdjustQuantities</code> GraphQL mutation.
+              The fundamental problem is that an app cannot isolate and remove only its
+              <strong>own contribution</strong>
+              to a product's "incoming" inventory. This issue stems from the behavior of Shopify's
+              <code>inventoryAdjustQuantities</code> API mutation.
             </p>
 
-            <blockquote class="border-l-4 border-slate-300 pl-4 italic text-slate-600">
-              The API only allows an app to see and modify the <strong>net total</strong> incoming inventory, which is
-              the sum of all sources (Shopify POs + App adjustments).
-            </blockquote>
+            <div>
+              <h3 class="font-semibold text-lg text-slate-800 mb-3">Key Components of This Issue:</h3>
+              <ul class="space-y-3">
+                <li class="list-item-custom">
+                  <strong>Net Total vs. App-Specific Inventory:</strong> The API only allows an app to see and modify
+                  the <strong>net total</strong> incoming inventory for a product. This net figure is the sum of all
+                  incoming sources, including Shopify Purchase Orders (POs) and any adjustments from apps.
+                </li>
+                <li class="list-item-custom">
+                  <strong>Lack of Visibility:</strong> An app has no way to see the specific incoming quantity
+                  contributed by Shopify POs or other sources. It also cannot see its own true value stored by Shopify;
+                  it can only see the final net total.
+                </li>
+              </ul>
+            </div>
 
-            <p>This creates a paradox when an app attempts to "zero out" its influence:</p>
-            <ol class="list-decimal list-inside space-y-2 pl-2">
-              <li>A product has <strong>+100 units</strong> incoming from a Shopify Purchase Order.</li>
-              <li>
-                An app, intending to set its own contribution to 0, uses the API to set the total incoming quantity to
-                0.
-              </li>
-              <li>
-                To make the math work (<code>100 - 100 = 0</code>), Shopify's system forces the app's contribution to
-                become <strong>-100 units</strong>.
-              </li>
-              <li>
-                The app is now "stuck." It cannot know that its value is negative because it can only see the net total
-                (which is 0). It has no way to see the +100 from the Shopify PO and is therefore unable to ever truly
-                correct its own value back to zero.
-              </li>
-            </ol>
+            <div>
+              <h3 class="font-semibold text-lg text-slate-800 mb-3">The "Zeroing Out" Paradox in Action:</h3>
+              <div class="border-l-4 border-slate-200 pl-4 text-slate-600 space-y-2">
+                <p>1. A product has <strong>+10 units</strong> incoming from a Shopify PO.</p>
+                <p>2. An app attempts to remove its influence by using the API to set its incoming quantity to 0.</p>
+                <p>
+                  3. However, the API interprets this as a command to set the
+                  <strong>net total incoming quantity</strong> to 0.
+                </p>
+                <p>
+                  4. To make the math work (10 - 10 = 0), Shopify forces the app's contribution to become
+                  <strong>-10 units</strong>.
+                </p>
+              </div>
+              <p>
+                Therefore, the act of setting the app's value to "0" perversely results in it becoming a negative
+                number. The app is then "stuck," as it cannot know the correct value needed to truly offset its
+                influence. This is caused by the "lack of visibility". This behavior puts apps in an impossible
+                situation where they cannot function correctly.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
       <!-- FAQ Section -->
-      <section id="faq" class="mb-12">
+      <section id="faq">
         <h2 class="text-3xl font-bold text-center mb-8 text-slate-900">Frequently Asked Questions</h2>
         <div class="space-y-6">
           <div class="card p-6">
             <h3 class="font-semibold text-lg text-slate-800 mb-2">
               Q: Is this caused by an app failing to delete its purchase orders?
             </h3>
-            <p class="text-slate-700">
-              A: No. The issue is not dependent on app-created purchase orders and can occur even if an app is never
-              uninstalled. The core problem lies in how the API calculates and exposes incoming inventory, not in app
-              data management.
+            <p>
+              A: No. The issue is not dependent on app-created purchase orders. Issue 2 can occur even if an app is
+              never uninstalled. The core problem lies in how the API calculates and exposes incoming inventory, not in
+              app data management.
             </p>
           </div>
 
@@ -147,10 +182,10 @@
             <h3 class="font-semibold text-lg text-slate-800 mb-2">
               Q: Why can't the app just fix the negative inventory?
             </h3>
-            <p class="text-slate-700">
-              A: An app cannot see its own inventory value versus Shopify's. It only sees the net total. To "fix" a -100
-              value it doesn't know exists, it would need to know the Shopify PO quantity (+100) and add that amount.
-              The API provides no way for the app to get this information.
+            <p>
+              A: An app cannot see its own incoming inventory value versus Shopify's. It only sees the net total
+              incoming. To "fix" a -10 value it doesn't know exists, it would need to know the Shopify PO quantity (+10)
+              and add that amount. The API provides no way for the app to get this information.
             </p>
           </div>
 
@@ -158,9 +193,9 @@
             <h3 class="font-semibold text-lg text-slate-800 mb-2">
               Q: Doesn't the <code>inventoryAdjustQuantities</code> mutation only affect "Available" inventory?
             </h3>
-            <p class="text-slate-700">
-              A: No, that is incorrect. This mutation is the only API available for an app to programmatically adjust
-              "Incoming" inventory quantities. This issue has absolutely nothing to do with "Available" inventory.
+            <p>
+              A: No, that is incorrect. This mutation is allows for an app to programmatically adjust "Incoming"
+              inventory quantities. This issue has absolutely nothing to do with "Available" inventory.
             </p>
           </div>
 
@@ -168,17 +203,38 @@
             <h3 class="font-semibold text-lg text-slate-800 mb-2">
               Q: Is the app deleting or nullifying Shopify Purchase Orders?
             </h3>
-            <p class="text-slate-700">
+            <p>
               A: No. There is no API for an app to delete Shopify Purchase Orders. The app's action of setting the net
-              incoming inventory to zero has the <em>effect</em> of nullifying the quantity from a Shopify PO, but it
-              does so by creating an offsetting negative balance attributed to the app.
+              incoming inventory to zero has the <em>net effect</em> of zeroing the incoming quantity from a Shopify PO.
+            </p>
+          </div>
+
+          <div class="card p-6">
+            <h3 class="font-semibold text-lg text-slate-800 mb-2">
+              Q: Can't the merchant just correct the "stuck" inventory themselves?
+            </h3>
+            <p>
+              A: No. There is no interface in the Shopify admin for a merchant to manually edit or remove the individual
+              incoming inventory contributions from a specific app. Their only recourse is to reinstall the app and have
+              it attempt a correction, which is not truly possible due to the "zeroing out" paradox.
+            </p>
+          </div>
+
+          <div class="card p-6">
+            <h3 class="font-semibold text-lg text-slate-800 mb-2">
+              Q: Why are specific examples (SKUs, timestamps) not relevant for this issue?
+            </h3>
+            <p>
+              A: While specific examples can illustrate the problem, the issue itself is not with a specific merchant,
+              variant, or timeframe. It is a fundamental flaw in the behavior of the Shopify API itself. Focusing on
+              individual cases distracts from the need to address the systemic problem.
             </p>
           </div>
         </div>
       </section>
 
       <!-- Footer -->
-      <footer class="text-center text-slate-500 text-sm pt-8">
+      <footer class="text-center text-slate-500 text-sm pt-12">
         <p>
           This document was created to provide a clear, factual explanation of systemic API issues. Last updated: June
           23, 2025.
