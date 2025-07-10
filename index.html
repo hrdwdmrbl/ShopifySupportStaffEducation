@@ -93,10 +93,10 @@
               them.
             </p>
             <p class="text-slate-600 italic">
-              The only way for a merchant to fix this is to reinstall the app solely for the purpose of having the app
-              correct the inventory. This problem persists even if an app is behaving perfectly, as it is a fundamental
-              limitation of the uninstall process COMBINED with a decision by Shopify to not "zero out" incoming
-              inventory from apps when they are uninstalled.
+              The only way for a merchant to fix this is to install an(other) app to correct the incoming inventory.
+              This problem persists even if an app is behaving perfectly, as it is a fundamental limitation of the
+              uninstall process COMBINED with a decision by Shopify to not "zero out" incoming inventory from apps when
+              they are uninstalled.
             </p>
           </div>
         </div>
@@ -204,6 +204,13 @@
         <h2 class="text-3xl font-bold text-center mb-8 text-slate-900">Frequently Asked Questions</h2>
         <div class="space-y-6">
           <div class="card p-6">
+            <h3 class="font-semibold text-lg text-slate-800 mb-2">Q: Are these real problems or just theoretical?</h3>
+            <p>
+              A: These are real problems that have been experienced by at least 3 store owners within the past month.
+            </p>
+          </div>
+
+          <div class="card p-6">
             <h3 class="font-semibold text-lg text-slate-800 mb-2">
               Q: Is this caused by an app failing to delete its purchase orders?
             </h3>
@@ -296,6 +303,23 @@
               variant, or timeframe. It is a fundamental flaw in the behavior of the Shopify API itself. Focusing on
               individual cases distracts from the need to address the systemic problem.
             </p>
+          </div>
+
+          <div class="card p-6">
+            <h3 class="font-semibold text-lg text-slate-800 mb-2">
+              Q: Would re-installing the app allow issue 1 to be fixed?
+            </h3>
+            <p>
+              A: Only if the app imports the incoming inventory from Shopify and then offers a way to manually adjust
+              that incoming quantity.
+            </p>
+          </div>
+
+          <div class="card p-6">
+            <h3 class="font-semibold text-lg text-slate-800 mb-2">
+              Q: Can't an(other) app just undo the incoming quantities caused by issue 1?
+            </h3>
+            <p>A: Yes, but that would require creating a custom app to do that. Most store owners can't do that.</p>
           </div>
         </div>
       </section>
